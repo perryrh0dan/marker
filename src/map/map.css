@@ -10,16 +10,29 @@
     position: relative;
 }
 
-.marker {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+.float {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
     z-index: 400;
 }
 
-.current {
+.marker {
+    bottom: 120px;
     position: absolute;
-    bottom: 70px;
     right: 20px;
-    z-index: 400;
+}
+
+.current {
+    bottom: 70px;
+    position: absolute;
+    right: 20px;
+}
+
+.export {
+    bottom: 20px;
+    position: absolute;
+    right: 20px;
 }

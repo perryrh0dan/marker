@@ -15,6 +15,13 @@ import { useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import './map.css'
+import getId, { loadData } from '../utils'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+    faDownload,
+    faLocationCrosshairs,
+    faLocationDot,
+} from '@fortawesome/free-solid-svg-icons'
 
 function Map() {
     const navigate = useNavigate()
@@ -149,17 +156,15 @@ function Map() {
     }
 
     function buildGeoJSON(): any {
-        const d = Object.values((fgRef.current as any)._layers).map(
-            (l: any) => {
-                const data = l.toGeoJSON()
-                data.properties = {
-                    ...data.properties,
-                    ...l.properties,
-                    featureId: l.featureId,
-                }
-                return data
-            },
-        )
+        const d = fgRef.current?.getLayers().map((l: any) => {
+            const data = l.toGeoJSON()
+            data.properties = {
+                ...data.properties,
+                ...l.properties,
+                featureId: l.featureId,
+            }
+            return data
+        })
 
         return {
             type: 'FeatureCollection',
@@ -201,7 +206,7 @@ function Map() {
         })
     }
 
-    async function handleAddMarker(): Promise<void> {
+    function handleAddMarker(): void {
         const position = currentPositionRef.current
 
         if (!position) return
@@ -227,11 +232,7 @@ function Map() {
         save(d)
     }
 
-    const getId = () => {
-        return crypto ? crypto.randomUUID() : Math.random() * 1000000000
-    }
-
-    async function handleJumpToCurrentLocation(): Promise<void> {
+    function handleJumpToCurrentLocation(): void {
         const position = currentPositionRef.current
 
         if (!position) return
@@ -241,6 +242,32 @@ function Map() {
             position.coords.longitude,
         )
         map.current?.setView(latLng, 18)
+    }
+
+    function handleExport(): void {
+        const features = buildGeoJSON()
+        const data = loadData()
+
+        const result = {
+            features: features,
+            data: data,
+        }
+
+        const url = window.URL.createObjectURL(
+            new Blob([JSON.stringify(result)]),
+        )
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `layers.json`)
+
+        // Append to html link element page
+        document.body.appendChild(link)
+
+        // Start download
+        link.click()
+
+        // Clean up and remove the link
+        link.parentNode?.removeChild(link)
     }
 
     function canClick(): boolean {
@@ -287,11 +314,17 @@ function Map() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
             </MapContainer>
-            <button onClick={handleAddMarker} className="marker">
-                Add Marker
+            <button onClick={handleAddMarker} className="float marker">
+                <FontAwesomeIcon icon={faLocationDot} />
             </button>
-            <button onClick={handleJumpToCurrentLocation} className="current">
-                Current Location
+            <button
+                onClick={handleJumpToCurrentLocation}
+                className="float current"
+            >
+                <FontAwesomeIcon icon={faLocationCrosshairs} />
+            </button>
+            <button onClick={handleExport} className="float export">
+                <FontAwesomeIcon icon={faDownload} />
             </button>
         </div>
     )

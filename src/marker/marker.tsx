@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import './marker.css'
 import { useEffect, useState } from 'react'
+import { loadData, saveData } from '../utils'
 
 function Marker() {
     const params = useParams()
@@ -9,27 +10,12 @@ function Marker() {
 
     const [title, setTitle] = useState<string>('')
 
-    const load = (): Array<any> => {
-        try {
-            const rawData = localStorage.getItem('data')
-            if (rawData === null) return []
-
-            return JSON.parse(rawData) ?? []
-        } catch (error) {
-            return []
-        }
-    }
-
-    const save = (data: Array<any>) => {
-        localStorage.setItem('data', JSON.stringify(data))
-    }
-
     const cancel = () => {
         navigate('/')
     }
 
     useEffect(() => {
-        const markers = load()
+        const markers = loadData()
         const marker = markers.find((m) => m.id === params.id)
 
         if (!marker) return
@@ -38,7 +24,7 @@ function Marker() {
     }, [])
 
     const handleSave = () => {
-        const markers = load()
+        const markers = loadData()
         const marker = markers.find((m) => m.id === params.id)
 
         if (marker) {
@@ -47,7 +33,7 @@ function Marker() {
             markers.push({ id: params.id, title: title })
         }
 
-        save(markers)
+        saveData(markers)
         cancel()
     }
 
@@ -62,9 +48,11 @@ function Marker() {
     return (
         <div className="form">
             <div>{params.id}</div>
-            <input value={title} onChange={handleChange} />
-            <button onClick={handleSave}>Save</button>
-            <button onClick={handleCancel}>Cancel</button>
+            <input placeholder="Title" value={title} onChange={handleChange} />
+            <div className="buttons">
+                <button onClick={handleSave}>Save</button>
+                <button onClick={handleCancel}>Cancel</button>
+            </div>
         </div>
     )
 }
