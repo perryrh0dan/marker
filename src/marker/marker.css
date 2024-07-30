@@ -11,4 +11,24 @@
         gap: 1rem;
         justify-content: center;
     }
+
+    .bmhs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        flex-wrap: wrap;
+        gap: 1rem;
+
+        .bmh {
+            border: 1px solid black;
+            min-width: 0;
+            text-overflow: ellipsis;
+            text-wrap: wrap;
+            overflow: hidden;
+            overflow-wrap: break-word;
+        }
+
+        .active {
+            background-color: blue;
+        }
+    }
 }

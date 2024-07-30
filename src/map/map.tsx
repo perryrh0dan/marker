@@ -153,7 +153,15 @@ function Map() {
         saveLayers(d)
     }
 
-    function handleDeleted(): void {
+    function handleDeleted(e: { layers: FeatureGroupLeaflet }): void {
+        const data = loadData()
+        const deletedLayerIds = e.layers
+            .getLayers()
+            .map((l) => (l as any).featureId)
+
+        const newDate = data.filter((d) => !deletedLayerIds.includes(d.id))
+        saveData(newDate)
+
         const d = buildGeoJSON()
         saveLayers(d)
     }
@@ -322,7 +330,6 @@ function Map() {
                 <FeatureGroup ref={liveRef} />
                 <TileLayer
                     maxZoom={18}
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
             </MapContainer>
