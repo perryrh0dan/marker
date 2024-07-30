@@ -14,3 +14,17 @@ export function loadData(): Array<any> {
 export function saveData(data: Array<any>): void {
     localStorage.setItem('data', JSON.stringify(data))
 }
+
+export function saveLayers(data: any): void {
+    localStorage.setItem('layers', JSON.stringify(data))
+}
+
+export function loadLayers(): any | null {
+    const rawData = localStorage.getItem('layers')
+
+    if (rawData) {
+        return JSON.parse(rawData)
+    } else {
+        return null
+    }
+}

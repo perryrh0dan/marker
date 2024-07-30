@@ -36,3 +36,13 @@
     position: absolute;
     right: 20px;
 }
+
+.import {
+    bottom: 20px;
+    position: absolute;
+    right: 70px;
+}
+
+file {
+    display: none;
+}

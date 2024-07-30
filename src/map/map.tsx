@@ -15,12 +15,13 @@ import { useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import './map.css'
-import getId, { loadData } from '../utils'
+import getId, { loadData, loadLayers, saveData, saveLayers } from '../utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
     faDownload,
     faLocationCrosshairs,
     faLocationDot,
+    faUpload,
 } from '@fortawesome/free-solid-svg-icons'
 
 function Map() {
@@ -33,6 +34,8 @@ function Map() {
     const currentPositionRef = useRef<GeolocationPosition | null>(null)
     const editingRef = useRef(false)
     const deletingRef = useRef(false)
+
+    const fileUploadRef = useRef<HTMLInputElement | null>(null)
 
     const updateLiveLocation = (position: GeolocationPosition) => {
         currentPositionRef.current = position
@@ -90,7 +93,7 @@ function Map() {
             })
 
             try {
-                const data = load()
+                const data = loadLayers()
 
                 const icon = new Icon({
                     iconUrl: '/marker-icon.png',
@@ -142,17 +145,17 @@ function Map() {
         layer.featureId = getId()
 
         const d = buildGeoJSON()
-        save(d)
+        saveLayers(d)
     }
 
     function handleEdited(): void {
         const d = buildGeoJSON()
-        save(d)
+        saveLayers(d)
     }
 
     function handleDeleted(): void {
         const d = buildGeoJSON()
-        save(d)
+        saveLayers(d)
     }
 
     function buildGeoJSON(): any {
@@ -182,20 +185,6 @@ function Map() {
             }
         })
     }, [])
-
-    function save(data: any): void {
-        localStorage.setItem('layers', JSON.stringify(data))
-    }
-
-    function load(): any | null {
-        const rawData = localStorage.getItem('layers')
-
-        if (rawData) {
-            return JSON.parse(rawData)
-        } else {
-            return null
-        }
-    }
 
     function getCurrentPosition(): Promise<GeolocationPosition> {
         return new Promise((resolve, reject) => {
@@ -229,7 +218,7 @@ function Map() {
         fgRef.current?.addLayer(marker)
 
         const d = buildGeoJSON()
-        save(d)
+        saveLayers(d)
     }
 
     function handleJumpToCurrentLocation(): void {
@@ -268,6 +257,29 @@ function Map() {
 
         // Clean up and remove the link
         link.parentNode?.removeChild(link)
+    }
+
+    function handleImport(): void {
+        if (!fileUploadRef.current) return
+
+        fileUploadRef.current.click()
+    }
+
+    async function handleFileChange(): Promise<void> {
+        if (!fileUploadRef.current) return
+        if (!fileUploadRef.current.files) return
+
+        const file = fileUploadRef.current.files[0]
+        if (!file) return
+
+        const rawData = await file.text()
+
+        const data = JSON.parse(rawData)
+
+        saveData(data.data)
+        saveLayers(data.features)
+
+        window.location.reload()
     }
 
     function canClick(): boolean {
@@ -325,6 +337,15 @@ function Map() {
             </button>
             <button onClick={handleExport} className="float export">
                 <FontAwesomeIcon icon={faDownload} />
+            </button>
+            <button onClick={handleImport} className="float import">
+                <input
+                    id="file"
+                    ref={fileUploadRef}
+                    type="file"
+                    onChange={handleFileChange}
+                />
+                <FontAwesomeIcon icon={faUpload} />
             </button>
         </div>
     )
