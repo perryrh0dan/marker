@@ -1,131 +1,300 @@
-import { MapContainer } from "react-leaflet/MapContainer";
-import { TileLayer } from "react-leaflet/TileLayer";
-import { FeatureGroup } from "react-leaflet";
-import { EditControl } from "react-leaflet-draw";
-import { GeoJSON, Marker } from 'leaflet'
-import { useRef, useCallback, useState, useEffect } from "react";
+import { MapContainer } from 'react-leaflet/MapContainer'
+import { TileLayer } from 'react-leaflet/TileLayer'
+import { FeatureGroup } from 'react-leaflet'
+import { EditControl } from 'react-leaflet-draw'
+import {
+    Circle,
+    FeatureGroup as FeatureGroupLeaflet,
+    GeoJSON,
+    Icon,
+    LatLng,
+    Map as MapLeaflet,
+    Marker,
+} from 'leaflet'
+import { useRef, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import './map.css'
 
 function Map() {
-  const map = useRef()
+    const navigate = useNavigate()
 
-  const fgRef = useRef<any>(null)
-  const fgRefCallback = useCallback((ref: any) => {
-    if (ref !== null) {
-      // clear old layers
-      Object.values(ref._layers).map(layer => {
-        ref.removeLayer(layer)
-      })
+    const map = useRef<MapLeaflet | null>(null)
+    const fgRef = useRef<FeatureGroupLeaflet | null>(null)
+    const liveRef = useRef<FeatureGroupLeaflet | null>(null)
 
-      // create new layers
-      const rawData = localStorage.getItem('data')
-      if (rawData) {
-        try {
-          const data = JSON.parse(rawData)
-          const leafletGeoJSON = new GeoJSON(data);
+    const currentPositionRef = useRef<GeolocationPosition | null>(null)
+    const editingRef = useRef(false)
+    const deletingRef = useRef(false)
 
-          leafletGeoJSON.eachLayer(layer => {
-            layer.addEventListener('click', (e) => console.log(e))
-            layer.setStyle({ color: 'blue', opacity: 0.5 })
-            ref.addLayer(layer);
-          });
-        } catch (error) {
-          console.log(error)
+    const updateLiveLocation = (position: GeolocationPosition) => {
+        currentPositionRef.current = position
+
+        if (liveRef.current === null) return
+
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+
+        // clear old layers of feature group
+        liveRef.current.getLayers().map((layer) => {
+            liveRef.current?.removeLayer(layer)
+        })
+
+        const icon = new Icon({
+            iconUrl: '/live.png',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        })
+        const marker = new Marker([lat, lng], { icon: icon })
+
+        const circle = new Circle([lat, lng], {
+            radius: position.coords.accuracy,
+        })
+
+        liveRef.current.addLayer(marker)
+        liveRef.current.addLayer(circle)
+    }
+
+    const handleLocationError = (error: any) => {
+        console.error('Error Code = ' + error?.code + ' - ' + error?.message)
+    }
+
+    useEffect(() => {
+        const watchId = navigator.geolocation.watchPosition(
+            updateLiveLocation,
+            handleLocationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0,
+            },
+        )
+
+        return () => {
+            navigator.geolocation.clearWatch(watchId)
         }
-      }
+    }, [])
 
-      fgRef.current = ref
-    }
-  }, [])
+    const fgRefCallback = useCallback((ref: FeatureGroupLeaflet) => {
+        if (ref !== null) {
+            // clear old layers of feature group
+            ref.getLayers().map((layer) => {
+                ref.removeLayer(layer)
+            })
 
-  const handleCreated = (e: any): void => {
-    const { layerType, layer } = e;
+            try {
+                const data = load()
 
-    if (fgRef.current && layerType === 'polygon') {
-      const { _leaflet_id } = layer
+                const icon = new Icon({
+                    iconUrl: '/marker-icon.png',
+                    iconSize: [26, 40],
+                    iconAnchor: [13, 40],
+                })
 
-      fgRef.current._layers[_leaflet_id].properties = { id: _leaflet_id }
+                const leafletGeoJSON = new GeoJSON(data, {
+                    pointToLayer: function (_, latlng) {
+                        return new Marker(latlng, { icon: icon })
+                    },
+                })
 
-      layer.addEventListener('click', (e) => console.log(e))
-    }
-
-    const d = buildGeoJSON()
-    save(d)
-  }
-
-  function handleEdited(e: any): void {
-    const d = buildGeoJSON()
-    save(d)
-  }
-
-  function handleDeleted(e: any): void {
-    const d = buildGeoJSON()
-    save(d)
-  }
-
-  function buildGeoJSON(): any {
-    const d = Object.values(fgRef.current._layers).map((l: any) => {
-      const data = l.toGeoJSON()
-      data.properties = { ...data.properties, ...l.properties }
-      return data
-    })
-
-    return {
-      type: "FeatureCollection",
-      features: d,
-    }
-  }
-
-  useEffect(() => {
-    getCurrentPosition().then(position => {
-      if (map.current) {
-        map.current.setView([position.coords.latitude, position.coords.longitude], 13)
-      }
-    })
-  }, [])
-
-  function save(data: any): void {
-    localStorage.setItem("data", JSON.stringify(data))
-  }
-
-  function getCurrentPosition(): Promise<GeolocationPosition> {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition((position => resolve(position)), (error) => reject(error))
-    })
-  }
-
-  async function handleAddMarker(): Promise<void> {
-    const position = await getCurrentPosition()
-    const marker = new Marker([position.coords.latitude, position.coords.longitude])
-    fgRef.current.addLayer(marker)
-  }
-
-  return (
-    <div className="main">
-      <MapContainer ref={map} className='map' center={[37.8189, -122.4786]} zoom={13} scrollWheelZoom={false}>
-        <FeatureGroup ref={fgRefCallback}>
-          <EditControl position="topright" onCreated={handleCreated} onEdited={handleEdited} onDeleted={handleDeleted} draw={{
-            rectangle: false,
-            polyline: false,
-            circle: false,
-            circlemarker: false,
-            marker: true,
-            polygon: {
-              shapeOptions: {
-                color: 'blue'
-              }
+                leafletGeoJSON.eachLayer((layer: any) => {
+                    // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
+                    if (layer.feature!!.geometry.type === 'Point') {
+                        layer.addEventListener('click', (e: any) =>
+                            handleMarkerClick(e),
+                        )
+                    } else {
+                        layer.setStyle({ color: 'blue', opacity: 0.5 })
+                    }
+                    layer.featureId = layer.feature.properties.featureId
+                    ref.addLayer(layer)
+                })
+            } catch (error) {
+                console.log(error)
             }
-          }} />
-        </FeatureGroup>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-      </MapContainer >
-      <button onClick={handleAddMarker} className="marker">Add Marker</button>
-    </div>
-  )
+
+            fgRef.current = ref
+        }
+    }, [])
+
+    const handleMarkerClick = (layer: any) => {
+        if (!canClick()) return
+
+        navigate(`/marker/${layer.sourceTarget.featureId}`)
+    }
+
+    const handleCreated = (e: any): void => {
+        const { layerType, layer } = e
+
+        if (!fgRef.current) return
+
+        if (layerType === 'marker') {
+            layer.addEventListener('click', (e: any) => handleMarkerClick(e))
+        }
+
+        layer.featureId = getId()
+
+        const d = buildGeoJSON()
+        save(d)
+    }
+
+    function handleEdited(): void {
+        const d = buildGeoJSON()
+        save(d)
+    }
+
+    function handleDeleted(): void {
+        const d = buildGeoJSON()
+        save(d)
+    }
+
+    function buildGeoJSON(): any {
+        const d = Object.values((fgRef.current as any)._layers).map(
+            (l: any) => {
+                const data = l.toGeoJSON()
+                data.properties = {
+                    ...data.properties,
+                    ...l.properties,
+                    featureId: l.featureId,
+                }
+                return data
+            },
+        )
+
+        return {
+            type: 'FeatureCollection',
+            features: d,
+        }
+    }
+
+    useEffect(() => {
+        getCurrentPosition().then((position) => {
+            if (map.current) {
+                map.current.setView(
+                    [position.coords.latitude, position.coords.longitude],
+                    13,
+                )
+            }
+        })
+    }, [])
+
+    function save(data: any): void {
+        localStorage.setItem('layers', JSON.stringify(data))
+    }
+
+    function load(): any | null {
+        const rawData = localStorage.getItem('layers')
+
+        if (rawData) {
+            return JSON.parse(rawData)
+        } else {
+            return null
+        }
+    }
+
+    function getCurrentPosition(): Promise<GeolocationPosition> {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => resolve(position),
+                (error) => reject(error),
+            )
+        })
+    }
+
+    async function handleAddMarker(): Promise<void> {
+        const position = currentPositionRef.current
+
+        if (!position) return
+
+        const icon = new Icon({
+            iconUrl: '/marker-icon.png',
+            iconSize: [26, 40],
+            iconAnchor: [13, 40],
+        })
+        const marker = new Marker(
+            [position.coords.latitude, position.coords.longitude],
+            { icon: icon },
+        ) as any
+
+        marker.addEventListener('click', (e: any) => handleMarkerClick(e))
+
+        // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
+        marker.featureId!! = getId()
+
+        fgRef.current?.addLayer(marker)
+
+        const d = buildGeoJSON()
+        save(d)
+    }
+
+    const getId = () => {
+        return crypto ? crypto.randomUUID() : Math.random() * 1000000000
+    }
+
+    async function handleJumpToCurrentLocation(): Promise<void> {
+        const position = currentPositionRef.current
+
+        if (!position) return
+
+        const latLng = new LatLng(
+            position.coords.latitude,
+            position.coords.longitude,
+        )
+        map.current?.setView(latLng, 18)
+    }
+
+    function canClick(): boolean {
+        return editingRef.current === false && deletingRef.current === false
+    }
+
+    return (
+        <div className="main">
+            <MapContainer
+                ref={map}
+                className="map"
+                center={[37.8189, -122.4786]}
+                zoom={13}
+                scrollWheelZoom={true}
+            >
+                <FeatureGroup ref={fgRefCallback}>
+                    <EditControl
+                        position="topright"
+                        onCreated={handleCreated}
+                        onEdited={handleEdited}
+                        onEditStart={() => (editingRef.current = true)}
+                        onEditStop={() => (editingRef.current = false)}
+                        onDeleted={handleDeleted}
+                        onDeleteStart={() => (deletingRef.current = true)}
+                        onDeleteStop={() => (deletingRef.current = false)}
+                        draw={{
+                            rectangle: false,
+                            polyline: false,
+                            circle: false,
+                            circlemarker: false,
+                            marker: true,
+                            polygon: {
+                                shapeOptions: {
+                                    color: 'blue',
+                                },
+                            },
+                        }}
+                    />
+                </FeatureGroup>
+                <FeatureGroup ref={liveRef} />
+                <TileLayer
+                    maxZoom={18}
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+            </MapContainer>
+            <button onClick={handleAddMarker} className="marker">
+                Add Marker
+            </button>
+            <button onClick={handleJumpToCurrentLocation} className="current">
+                Current Location
+            </button>
+        </div>
+    )
 }
 
 export default Map
