@@ -195,7 +195,7 @@ function Map() {
             if (map.current) {
                 map.current.setView(
                     [position.coords.latitude, position.coords.longitude],
-                    13,
+                    18,
                 )
             }
         })
@@ -307,7 +307,7 @@ function Map() {
                 ref={map}
                 className="map"
                 center={[37.8189, -122.4786]}
-                zoom={13}
+                zoom={18}
                 scrollWheelZoom={true}
             >
                 <FeatureGroup ref={fgRefCallback}>

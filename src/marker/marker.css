@@ -6,19 +6,19 @@
 
     .float {
         background-color: rgb(13 148 136);
+        bottom: 0.5rem;
         border-radius: 100%;
         position: fixed;
         width: 5rem;
         height: 5rem;
+        color: white;
     }
 
     .save {
-        bottom: 20px;
         right: 0.5rem;
     }
 
     .cancel {
-        bottom: 20px;
         right: 6rem;
     }
 
