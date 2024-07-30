@@ -139,7 +139,14 @@ function Map() {
         if (!fgRef.current) return
 
         if (layerType === 'marker') {
+            const icon = new Icon({
+                iconUrl: '/marker-icon.png',
+                iconSize: [26, 40],
+                iconAnchor: [13, 40],
+            })
+
             layer.addEventListener('click', (e: any) => handleMarkerClick(e))
+            layer.setIcon(icon)
         }
 
         layer.featureId = getId()

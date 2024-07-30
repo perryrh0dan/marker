@@ -4,6 +4,24 @@
     gap: 1rem;
     margin: 1rem;
 
+    .float {
+        background-color: rgb(13 148 136);
+        border-radius: 100%;
+        position: fixed;
+        width: 5rem;
+        height: 5rem;
+    }
+
+    .save {
+        bottom: 20px;
+        right: 0.5rem;
+    }
+
+    .cancel {
+        bottom: 20px;
+        right: 6rem;
+    }
+
     .buttons {
         align-items: center;
         display: flex;
@@ -19,16 +37,35 @@
         gap: 1rem;
 
         .bmh {
-            border: 1px solid black;
+            align-items: center;
+            border: 2px solid rgb(203 213 225);
+            background-color: white;
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
             min-width: 0;
-            text-overflow: ellipsis;
-            text-wrap: wrap;
+            padding: 4px;
+            position: relative;
             overflow: hidden;
-            overflow-wrap: break-word;
+            outline: none;
+
+            span {
+                text-wrap: wrap;
+                overflow: hidden;
+                overflow-wrap: break-word;
+                text-overflow: ellipsis;
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            img {
+                height: 50px;
+                width: 50px;
+            }
         }
 
         .active {
-            background-color: blue;
+            border-color: rgb(245 158 11);
         }
     }
 }
