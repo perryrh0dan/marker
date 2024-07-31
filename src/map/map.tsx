@@ -12,7 +12,7 @@ import {
     Marker,
 } from 'leaflet'
 import { useRef, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import './map.css'
 import getId, { loadData, loadLayers, saveData, saveLayers } from '../utils'
@@ -27,7 +27,7 @@ import {
 function Map() {
     const navigate = useNavigate()
 
-    const map = useRef<MapLeaflet | null>(null)
+    const mapRef = useRef<MapLeaflet | null>(null)
     const fgRef = useRef<FeatureGroupLeaflet | null>(null)
     const liveRef = useRef<FeatureGroupLeaflet | null>(null)
 
@@ -36,6 +36,8 @@ function Map() {
     const deletingRef = useRef(false)
 
     const fileUploadRef = useRef<HTMLInputElement | null>(null)
+
+    const [searchParams, setSearchParams] = useSearchParams()
 
     const updateLiveLocation = (position: GeolocationPosition) => {
         currentPositionRef.current = position
@@ -82,6 +84,23 @@ function Map() {
 
         return () => {
             navigator.geolocation.clearWatch(watchId)
+        }
+    }, [])
+
+    const handleZoomChange = useCallback((e: any) => {
+        console.log(e.target._zoom)
+        setSearchParams(`zoom=${e.target._zoom}`)
+    }, [])
+
+    const mapRefCallback = useCallback((ref: MapLeaflet) => {
+        if (ref !== null) {
+            ref.on('zoom', handleZoomChange)
+
+            mapRef.current = ref
+
+            return () => {
+                ref.off('zoom', handleZoomChange)
+            }
         }
     }, [])
 
@@ -192,10 +211,12 @@ function Map() {
 
     useEffect(() => {
         getCurrentPosition().then((position) => {
-            if (map.current) {
-                map.current.setView(
+            const zoom = searchParams.get('zoom')
+
+            if (mapRef.current) {
+                mapRef.current.setView(
                     [position.coords.latitude, position.coords.longitude],
-                    19,
+                    zoom ? parseInt(zoom) : 19,
                 )
             }
         })
@@ -245,7 +266,7 @@ function Map() {
             position.coords.latitude,
             position.coords.longitude,
         )
-        map.current?.setView(latLng, 19)
+        mapRef.current?.setView(latLng, 19)
     }
 
     function handleExport(): void {
@@ -301,13 +322,15 @@ function Map() {
         return editingRef.current === false && deletingRef.current === false
     }
 
+    const zoom = searchParams.get('zoom')
+
     return (
         <div className="main">
             <MapContainer
-                ref={map}
+                ref={mapRefCallback}
                 className="map"
                 center={[37.8189, -122.4786]}
-                zoom={19}
+                zoom={zoom !== null ? parseInt(zoom) : 19}
                 scrollWheelZoom={true}
             >
                 <FeatureGroup ref={fgRefCallback}>
@@ -337,6 +360,7 @@ function Map() {
                 <FeatureGroup ref={liveRef} />
                 <TileLayer
                     maxZoom={22}
+                    maxNativeZoom={19}
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
             </MapContainer>

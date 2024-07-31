@@ -284,7 +284,7 @@ function Marker() {
     const [bmh, setBmh] = useState<Array<string>>([])
 
     const cancel = () => {
-        navigate('/')
+        navigate(-1)
     }
 
     useEffect(() => {
@@ -344,6 +344,7 @@ function Marker() {
             <div className="bmhs">
                 {BMH.map((value) => (
                     <button
+                        key={value.name}
                         className={
                             bmh.includes(value.name) ? 'bmh active' : 'bmh'
                         }
