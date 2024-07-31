@@ -195,7 +195,7 @@ function Map() {
             if (map.current) {
                 map.current.setView(
                     [position.coords.latitude, position.coords.longitude],
-                    18,
+                    19,
                 )
             }
         })
@@ -245,7 +245,7 @@ function Map() {
             position.coords.latitude,
             position.coords.longitude,
         )
-        map.current?.setView(latLng, 18)
+        map.current?.setView(latLng, 19)
     }
 
     function handleExport(): void {
@@ -307,7 +307,7 @@ function Map() {
                 ref={map}
                 className="map"
                 center={[37.8189, -122.4786]}
-                zoom={18}
+                zoom={19}
                 scrollWheelZoom={true}
             >
                 <FeatureGroup ref={fgRefCallback}>
@@ -336,7 +336,7 @@ function Map() {
                 </FeatureGroup>
                 <FeatureGroup ref={liveRef} />
                 <TileLayer
-                    maxZoom={18}
+                    maxZoom={22}
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
             </MapContainer>
