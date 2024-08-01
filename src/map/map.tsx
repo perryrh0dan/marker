@@ -61,6 +61,7 @@ function Map() {
 
         const circle = new Circle([lat, lng], {
             radius: position.coords.accuracy,
+            interactive: false,
         })
 
         liveRef.current.addLayer(marker)
@@ -88,13 +89,47 @@ function Map() {
     }, [])
 
     const handleZoomChange = useCallback((e: any) => {
-        console.log(e.target._zoom)
-        setSearchParams(`zoom=${e.target._zoom}`)
+        setSearchParams((prev) => {
+            prev.set('zoom', e.target._zoom)
+
+            return prev
+        })
+    }, [])
+
+    const handleMoveChange = useCallback((e: any) => {
+        const center = e.target.getCenter()
+        setSearchParams((prev) => {
+            prev.set('lat', center.lat.toString())
+            prev.set('lng', center.lng.toString())
+
+            return prev
+        })
     }, [])
 
     const mapRefCallback = useCallback((ref: MapLeaflet) => {
         if (ref !== null) {
+            const lat = searchParams.get('lat')
+            const lng = searchParams.get('lng')
+            if (lat && lng) {
+                const zoom = searchParams.get('zoom')
+
+                ref.setView(
+                    [parseFloat(lat), parseFloat(lng)],
+                    zoom ? parseInt(zoom) : 19,
+                )
+            } else {
+                getCurrentPosition().then((position) => {
+                    const zoom = searchParams.get('zoom')
+
+                    ref.setView(
+                        [position.coords.latitude, position.coords.longitude],
+                        zoom ? parseInt(zoom) : 19,
+                    )
+                })
+            }
+
             ref.on('zoom', handleZoomChange)
+            ref.on('moveend', handleMoveChange)
 
             mapRef.current = ref
 
@@ -134,6 +169,9 @@ function Map() {
                         )
                     } else {
                         layer.setStyle({ color: 'blue', opacity: 0.5 })
+                        layer.addEventListener('click', (e: any) =>
+                            handlePolygonClick(e),
+                        )
                     }
                     layer.featureId = layer.feature.properties.featureId
                     ref.addLayer(layer)
@@ -152,6 +190,12 @@ function Map() {
         navigate(`/marker/${layer.sourceTarget.featureId}`)
     }
 
+    const handlePolygonClick = (layer: any) => {
+        if (!canClick()) return
+
+        navigate(`/polygon/${layer.sourceTarget.featureId}`)
+    }
+
     const handleCreated = (e: any): void => {
         const { layerType, layer } = e
 
@@ -166,6 +210,8 @@ function Map() {
 
             layer.addEventListener('click', (e: any) => handleMarkerClick(e))
             layer.setIcon(icon)
+        } else if (layerType === '') {
+            layer.addEventListener('click', (e: any) => handlePolygonClick(e))
         }
 
         layer.featureId = getId()
@@ -208,19 +254,6 @@ function Map() {
             features: d,
         }
     }
-
-    useEffect(() => {
-        getCurrentPosition().then((position) => {
-            const zoom = searchParams.get('zoom')
-
-            if (mapRef.current) {
-                mapRef.current.setView(
-                    [position.coords.latitude, position.coords.longitude],
-                    zoom ? parseInt(zoom) : 19,
-                )
-            }
-        })
-    }, [])
 
     function getCurrentPosition(): Promise<GeolocationPosition> {
         return new Promise((resolve, reject) => {

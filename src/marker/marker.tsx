@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 import './marker.css'
-import { useEffect, useState } from 'react'
+
 import { loadData, saveData } from '../utils'
 
 const BMH = [
@@ -295,7 +296,7 @@ function Marker() {
 
         setBmh(marker.bmh ?? [])
         setComment(marker.comment ?? '')
-    }, [])
+    }, [params.id])
 
     const handleSave = () => {
         const markers = loadData()
@@ -335,12 +336,6 @@ function Marker() {
 
     return (
         <div className="form">
-            <button className="float save" onClick={handleSave}>
-                Save
-            </button>
-            <button className="float cancel" onClick={handleCancel}>
-                Cancel
-            </button>
             <div className="bmhs">
                 {BMH.map((value) => (
                     <button
@@ -361,6 +356,12 @@ function Marker() {
                 value={comment}
                 onChange={handleChange}
             />
+            <button className="float save" onClick={handleSave}>
+                Save
+            </button>
+            <button className="float cancel" onClick={handleCancel}>
+                Cancel
+            </button>
         </div>
     )
 }
