@@ -69,3 +69,19 @@ export function pointInPolygon(point: Point, polygon: Array<Point>) {
 
     return inside
 }
+
+export function setSearchParams(...values: Array<[string, string]>): void {
+    const url = new URL(window.location.href)
+
+    values.forEach(([key, value]) => {
+        url.searchParams.set(key, value)
+    })
+
+    window.history.replaceState({}, '', url)
+}
+
+export function getSearchParams(key: string): string | null {
+    const url = new URL(window.location.href)
+
+    return url.searchParams.get(key)
+}

@@ -12,10 +12,17 @@ import {
     Marker,
 } from 'leaflet'
 import { useRef, useCallback, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import './map.css'
-import getId, { loadData, loadLayers, saveData, saveLayers } from '../utils'
+import getId, {
+    getSearchParams,
+    loadData,
+    loadLayers,
+    saveData,
+    saveLayers,
+    setSearchParams,
+} from '../utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
     faDownload,
@@ -36,8 +43,6 @@ function Map() {
     const deletingRef = useRef(false)
 
     const fileUploadRef = useRef<HTMLInputElement | null>(null)
-
-    const [searchParams, setSearchParams] = useSearchParams()
 
     const updateLiveLocation = (position: GeolocationPosition) => {
         currentPositionRef.current = position
@@ -89,29 +94,21 @@ function Map() {
     }, [])
 
     const handleZoomChange = useCallback((e: any) => {
-        setSearchParams((prev) => {
-            prev.set('zoom', e.target._zoom)
-
-            return prev
-        })
+        setSearchParams(['zoom', e.target._zoom])
     }, [])
 
     const handleMoveChange = useCallback((e: any) => {
         const center = e.target.getCenter()
-        setSearchParams((prev) => {
-            prev.set('lat', center.lat.toString())
-            prev.set('lng', center.lng.toString())
-
-            return prev
-        })
+        setSearchParams(['lat', center.lat.toString()])
+        setSearchParams(['lng', center.lng.toString()])
     }, [])
 
     const mapRefCallback = useCallback((ref: MapLeaflet) => {
         if (ref !== null) {
-            const lat = searchParams.get('lat')
-            const lng = searchParams.get('lng')
+            const lat = getSearchParams('lat')
+            const lng = getSearchParams('lng')
             if (lat && lng) {
-                const zoom = searchParams.get('zoom')
+                const zoom = getSearchParams('zoom')
 
                 ref.setView(
                     [parseFloat(lat), parseFloat(lng)],
@@ -119,7 +116,7 @@ function Map() {
                 )
             } else {
                 getCurrentPosition().then((position) => {
-                    const zoom = searchParams.get('zoom')
+                    const zoom = getSearchParams('zoom')
 
                     ref.setView(
                         [position.coords.latitude, position.coords.longitude],
@@ -135,6 +132,7 @@ function Map() {
 
             return () => {
                 ref.off('zoom', handleZoomChange)
+                ref.off('moveend', handleMoveChange)
             }
         }
     }, [])
@@ -355,15 +353,13 @@ function Map() {
         return editingRef.current === false && deletingRef.current === false
     }
 
-    const zoom = searchParams.get('zoom')
-
     return (
         <div className="main">
             <MapContainer
                 ref={mapRefCallback}
                 className="map"
                 center={[37.8189, -122.4786]}
-                zoom={zoom !== null ? parseInt(zoom) : 19}
+                zoom={19}
                 scrollWheelZoom={true}
             >
                 <FeatureGroup ref={fgRefCallback}>
