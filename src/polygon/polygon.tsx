@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react'
 import './polygon.css'
 
 import { loadData, loadLayers, saveData, Point, pointInPolygon } from '../utils'
+import { calculatePolygonArea } from '../geo'
 
 function Polygon() {
     const params = useParams()
     const navigate = useNavigate()
 
-    const [name, setName] = useState<string>('')
     const [markerCount, setMarkerCount] = useState<number>(0)
+    const [size, setSize] = useState<number>(0)
+
+    const [name, setName] = useState<string>('')
     const [comment, setComment] = useState<string>('')
 
     useEffect(() => {
@@ -43,6 +46,16 @@ function Polygon() {
         })
 
         setMarkerCount(internalCounter)
+
+        const size = calculatePolygonArea(
+            polygon.geometry.coordinates[0].map(
+                ([lat, lng]: [number, number]) => {
+                    return { latitude: lat, longitude: lng }
+                },
+            ),
+        )
+
+        setSize(Math.round(size * 100) / 100)
     }, [params.id])
 
     const cancel = () => {
@@ -75,9 +88,15 @@ function Polygon() {
         setComment(e.target.value)
     }
 
+    const ration = Math.round((markerCount / size) * 100) / 100
+
     return (
         <div className="form">
-            <span>Markers: {markerCount}</span>
+            <div className="infos">
+                <span>Markers: {markerCount}</span>
+                <span>Size: {size}hr</span>
+                <span>Ration: {ration}</span>
+            </div>
             <input
                 placeholder="Name"
                 value={name}
