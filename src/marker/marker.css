@@ -42,7 +42,7 @@
 
         .bmh {
             align-items: center;
-            border: 2px solid rgb(203 213 225);
+            border: 0.2rem solid rgb(203 213 225);
             background-color: white;
             display: flex;
             flex-flow: column;

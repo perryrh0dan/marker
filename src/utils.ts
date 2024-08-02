@@ -22,9 +22,13 @@ export function saveLayers(data: any): void {
 export function loadLayers(): any | null {
     const rawData = localStorage.getItem('layers')
 
-    if (rawData) {
-        return JSON.parse(rawData)
-    } else {
+    try {
+        if (rawData) {
+            return JSON.parse(rawData)
+        } else {
+            return null
+        }
+    } catch (error) {
         return null
     }
 }

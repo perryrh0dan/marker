@@ -1,3 +1,5 @@
+import { useRef, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer } from 'react-leaflet/MapContainer'
 import { TileLayer } from 'react-leaflet/TileLayer'
 import { FeatureGroup } from 'react-leaflet'
@@ -10,19 +12,11 @@ import {
     LatLng,
     Map as MapLeaflet,
     Marker,
+    MarkerClusterGroup,
+    markerClusterGroup,
 } from 'leaflet'
-import { useRef, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-import './map.css'
-import getId, {
-    getSearchParams,
-    loadData,
-    loadLayers,
-    saveData,
-    saveLayers,
-    setSearchParams,
-} from '../utils'
+import 'leaflet.markercluster'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
     faDownload,
@@ -31,11 +25,29 @@ import {
     faUpload,
 } from '@fortawesome/free-solid-svg-icons'
 
+import './map.css'
+
+import getId, {
+    getSearchParams,
+    loadData,
+    loadLayers,
+    saveData,
+    saveLayers,
+    setSearchParams,
+} from '../utils'
+
+const icon = new Icon({
+    iconUrl: '/marker-icon.png',
+    iconSize: [26, 40],
+    iconAnchor: [13, 40],
+})
+
 function Map() {
     const navigate = useNavigate()
 
     const mapRef = useRef<MapLeaflet | null>(null)
     const fgRef = useRef<FeatureGroupLeaflet | null>(null)
+    const clusterRef = useRef<MarkerClusterGroup | null>(null)
     const liveRef = useRef<FeatureGroupLeaflet | null>(null)
 
     const currentPositionRef = useRef<GeolocationPosition | null>(null)
@@ -53,15 +65,10 @@ function Map() {
         const lng = position.coords.longitude
 
         // clear old layers of feature group
-        liveRef.current.getLayers().map((layer) => {
+        liveRef.current.eachLayer((layer) => {
             liveRef.current?.removeLayer(layer)
         })
 
-        const icon = new Icon({
-            iconUrl: '/live.png',
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
-        })
         const marker = new Marker([lat, lng], { icon: icon })
 
         const circle = new Circle([lat, lng], {
@@ -103,6 +110,33 @@ function Map() {
         setSearchParams(['lng', center.lng.toString()])
     }, [])
 
+    function copyMarkerToEditableLayer(): void {
+        clusterRef.current?.getLayers().map((layer) => {
+            if (layer instanceof Marker) {
+                const latLng = layer.getLatLng()
+                const newMarker = new Marker(latLng, { icon: icon })
+                fgRef.current?.addLayer(newMarker)
+
+                clusterRef.current?.removeLayer(layer)
+            }
+        })
+    }
+
+    function copyMarkerFromEditablelayer(): void {
+        fgRef.current?.getLayers().map((layer) => {
+            if (layer instanceof Marker) {
+                const latLng = layer.getLatLng()
+                const newMarker = new Marker(latLng, { icon: icon })
+                newMarker.addEventListener('click', (e: any) =>
+                    handleMarkerClick(e),
+                )
+                clusterRef.current?.addLayer(newMarker)
+
+                fgRef.current?.removeLayer(layer)
+            }
+        })
+    }
+
     const mapRefCallback = useCallback((ref: MapLeaflet) => {
         if (ref !== null) {
             const lat = getSearchParams('lat')
@@ -140,75 +174,96 @@ function Map() {
     const fgRefCallback = useCallback((ref: FeatureGroupLeaflet) => {
         if (ref !== null) {
             // clear old layers of feature group
-            ref.getLayers().map((layer) => {
+            ref.eachLayer((layer) => {
                 ref.removeLayer(layer)
             })
 
-            try {
-                const data = loadLayers()
+            const data = loadLayers()
+            if (!data) return
 
-                const icon = new Icon({
-                    iconUrl: '/marker-icon.png',
-                    iconSize: [26, 40],
-                    iconAnchor: [13, 40],
-                })
+            const leafletGeoJSON = new GeoJSON(data)
 
-                const leafletGeoJSON = new GeoJSON(data, {
-                    pointToLayer: function (_, latlng) {
-                        return new Marker(latlng, { icon: icon })
-                    },
-                })
-
-                leafletGeoJSON.eachLayer((layer: any) => {
-                    // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
-                    if (layer.feature!!.geometry.type === 'Point') {
-                        layer.addEventListener('click', (e: any) =>
-                            handleMarkerClick(e),
-                        )
-                    } else {
-                        layer.setStyle({ color: 'blue', opacity: 0.5 })
-                        layer.addEventListener('click', (e: any) =>
-                            handlePolygonClick(e),
-                        )
-                    }
+            leafletGeoJSON.eachLayer((layer: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
+                if (layer.feature!!.geometry.type === 'Polygon') {
+                    layer.setStyle({ color: 'blue', opacity: 0.5 })
+                    layer.addEventListener('click', (e: any) =>
+                        handlePolygonClick(e),
+                    )
                     layer.featureId = layer.feature.properties.featureId
                     ref.addLayer(layer)
-                })
-            } catch (error) {
-                console.log(error)
-            }
+                }
+            })
 
             fgRef.current = ref
         }
     }, [])
 
-    const handleMarkerClick = (layer: any) => {
+    const clusterRefCallback = (ref: FeatureGroupLeaflet) => {
+        if (ref !== null) {
+            // clear old layers of feature group
+            ref.eachLayer((layer) => {
+                ref.removeLayer(layer)
+            })
+
+            const data = loadLayers()
+            if (!data) return
+
+            const leafletGeoJSON = new GeoJSON(data, {
+                pointToLayer: function (_, latlng) {
+                    return new Marker(latlng, { icon: icon })
+                },
+            })
+
+            const cluster = markerClusterGroup({
+                maxClusterRadius: (zoom) => {
+                    if (zoom > 18) {
+                        return 10
+                    } else if (zoom > 15) {
+                        return 80
+                    } else {
+                        return 100
+                    }
+                },
+            })
+
+            leafletGeoJSON.eachLayer((layer: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
+                if (layer.feature!!.geometry.type === 'Point') {
+                    layer.addEventListener('click', (e: any) =>
+                        handleMarkerClick(e),
+                    )
+                    layer.featureId = layer.feature.properties.featureId
+                    cluster.addLayer(layer)
+                }
+            })
+
+            ref.addLayer(cluster)
+            clusterRef.current = cluster
+        }
+    }
+
+    function handleMarkerClick(layer: any): void {
         if (!canClick()) return
 
         navigate(`/marker/${layer.sourceTarget.featureId}`)
     }
 
-    const handlePolygonClick = (layer: any) => {
+    function handlePolygonClick(layer: any): void {
         if (!canClick()) return
 
         navigate(`/polygon/${layer.sourceTarget.featureId}`)
     }
 
-    const handleCreated = (e: any): void => {
+    function handleCreated(e: any): void {
         const { layerType, layer } = e
 
         if (!fgRef.current) return
 
         if (layerType === 'marker') {
-            const icon = new Icon({
-                iconUrl: '/marker-icon.png',
-                iconSize: [26, 40],
-                iconAnchor: [13, 40],
-            })
-
             layer.addEventListener('click', (e: any) => handleMarkerClick(e))
             layer.setIcon(icon)
-        } else if (layerType === '') {
+        } else if (layerType === 'polygon') {
             layer.addEventListener('click', (e: any) => handlePolygonClick(e))
         }
 
@@ -236,20 +291,56 @@ function Map() {
         saveLayers(d)
     }
 
+    function handleEditStart() {
+        editingRef.current = true
+
+        copyMarkerToEditableLayer()
+    }
+
+    function handleEditStop() {
+        editingRef.current = false
+
+        copyMarkerFromEditablelayer()
+    }
+
+    function handleDeleteStart() {
+        deletingRef.current = true
+
+        copyMarkerToEditableLayer()
+    }
+
+    function handleDeleteStop() {
+        deletingRef.current = false
+
+        copyMarkerFromEditablelayer()
+    }
+
     function buildGeoJSON(): any {
-        const d = fgRef.current?.getLayers().map((l: any) => {
-            const data = l.toGeoJSON()
-            data.properties = {
-                ...data.properties,
-                ...l.properties,
-                featureId: l.featureId,
-            }
-            return data
-        })
+        const polygons =
+            fgRef.current?.getLayers().map((l: any) => {
+                const data = l.toGeoJSON()
+                data.properties = {
+                    ...data.properties,
+                    ...l.properties,
+                    featureId: l.featureId,
+                }
+                return data
+            }) ?? []
+
+        const markers =
+            clusterRef.current?.getLayers().map((l: any) => {
+                const data = l.toGeoJSON()
+                data.properties = {
+                    ...data.properties,
+                    ...l.properties,
+                    featureId: l.featureId,
+                }
+                return data
+            }) ?? []
 
         return {
             type: 'FeatureCollection',
-            features: d,
+            features: [...polygons, ...markers],
         }
     }
 
@@ -267,11 +358,6 @@ function Map() {
 
         if (!position) return
 
-        const icon = new Icon({
-            iconUrl: '/marker-icon.png',
-            iconSize: [26, 40],
-            iconAnchor: [13, 40],
-        })
         const marker = new Marker(
             [position.coords.latitude, position.coords.longitude],
             { icon: icon },
@@ -282,7 +368,7 @@ function Map() {
         // eslint-disable-next-line @typescript-eslint/no-extra-non-null-assertion
         marker.featureId!! = getId()
 
-        fgRef.current?.addLayer(marker)
+        clusterRef.current?.addLayer(marker)
 
         const d = buildGeoJSON()
         saveLayers(d)
@@ -321,9 +407,6 @@ function Map() {
 
         // Start download
         link.click()
-
-        // Clean up and remove the link
-        link.parentNode?.removeChild(link)
     }
 
     function handleImport(): void {
@@ -360,6 +443,7 @@ function Map() {
                 className="map"
                 center={[37.8189, -122.4786]}
                 zoom={19}
+                maxZoom={22}
                 scrollWheelZoom={true}
             >
                 <FeatureGroup ref={fgRefCallback}>
@@ -367,11 +451,11 @@ function Map() {
                         position="topright"
                         onCreated={handleCreated}
                         onEdited={handleEdited}
-                        onEditStart={() => (editingRef.current = true)}
-                        onEditStop={() => (editingRef.current = false)}
+                        onEditStart={handleEditStart}
+                        onEditStop={handleEditStop}
                         onDeleted={handleDeleted}
-                        onDeleteStart={() => (deletingRef.current = true)}
-                        onDeleteStop={() => (deletingRef.current = false)}
+                        onDeleteStart={handleDeleteStart}
+                        onDeleteStop={handleDeleteStop}
                         draw={{
                             rectangle: false,
                             polyline: false,
@@ -386,6 +470,7 @@ function Map() {
                         }}
                     />
                 </FeatureGroup>
+                <FeatureGroup ref={clusterRefCallback} />
                 <FeatureGroup ref={liveRef} />
                 <TileLayer
                     maxZoom={22}
