@@ -223,12 +223,7 @@ function Map() {
         saveLayers(d)
     }
 
-    function handleDeleted(e: {
-        layers: FeatureGroupLeaflet
-        preventDefault: () => void
-    }): void {
-        e.preventDefault()
-
+    function handleDeleted(e: { layers: FeatureGroupLeaflet }): void {
         const data = loadData()
         const deletedLayerIds = e.layers
             .getLayers()
