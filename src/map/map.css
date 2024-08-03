@@ -14,33 +14,35 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
     height: 40px;
+    position: absolute;
+    width: 40px;
     z-index: 400;
 }
 
 .marker {
     bottom: 120px;
-    position: absolute;
     right: 20px;
 }
 
 .current {
     bottom: 70px;
-    position: absolute;
     right: 20px;
 }
 
 .export {
     bottom: 20px;
-    position: absolute;
     right: 20px;
 }
 
 .import {
     bottom: 20px;
-    position: absolute;
     right: 70px;
+}
+
+.statistics {
+    bottom: 20px;
+    left: 20px;
 }
 
 #file {

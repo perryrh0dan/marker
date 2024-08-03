@@ -19,6 +19,7 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
+    faChartLine,
     faDownload,
     faLocationCrosshairs,
     faLocationDot,
@@ -36,10 +37,16 @@ import getId, {
     setSearchParams,
 } from '../utils'
 
-const icon = new Icon({
+const markerIcon = new Icon({
     iconUrl: '/marker-icon.png',
     iconSize: [26, 40],
     iconAnchor: [13, 40],
+})
+
+const liveIcon = new Icon({
+    iconUrl: '/live.png',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
 })
 
 function Map() {
@@ -69,7 +76,7 @@ function Map() {
             liveRef.current?.removeLayer(layer)
         })
 
-        const marker = new Marker([lat, lng], { icon: icon })
+        const marker = new Marker([lat, lng], { icon: liveIcon })
 
         const circle = new Circle([lat, lng], {
             radius: position.coords.accuracy,
@@ -114,7 +121,8 @@ function Map() {
         clusterRef.current?.getLayers().map((layer) => {
             if (layer instanceof Marker) {
                 const latLng = layer.getLatLng()
-                const newMarker = new Marker(latLng, { icon: icon })
+                const newMarker = new Marker(latLng, { icon: markerIcon })
+                ;(newMarker as any).featureId = (layer as any).featureId
                 fgRef.current?.addLayer(newMarker)
 
                 clusterRef.current?.removeLayer(layer)
@@ -126,10 +134,11 @@ function Map() {
         fgRef.current?.getLayers().map((layer) => {
             if (layer instanceof Marker) {
                 const latLng = layer.getLatLng()
-                const newMarker = new Marker(latLng, { icon: icon })
+                const newMarker = new Marker(latLng, { icon: markerIcon })
                 newMarker.addEventListener('click', (e: any) =>
                     handleMarkerClick(e),
                 )
+                ;(newMarker as any).featureId = (layer as any).featureId
                 clusterRef.current?.addLayer(newMarker)
 
                 fgRef.current?.removeLayer(layer)
@@ -211,7 +220,7 @@ function Map() {
 
             const leafletGeoJSON = new GeoJSON(data, {
                 pointToLayer: function (_, latlng) {
-                    return new Marker(latlng, { icon: icon })
+                    return new Marker(latlng, { icon: markerIcon })
                 },
             })
 
@@ -262,7 +271,7 @@ function Map() {
 
         if (layerType === 'marker') {
             layer.addEventListener('click', (e: any) => handleMarkerClick(e))
-            layer.setIcon(icon)
+            layer.setIcon(markerIcon)
         } else if (layerType === 'polygon') {
             layer.addEventListener('click', (e: any) => handlePolygonClick(e))
         }
@@ -360,7 +369,7 @@ function Map() {
 
         const marker = new Marker(
             [position.coords.latitude, position.coords.longitude],
-            { icon: icon },
+            { icon: markerIcon },
         ) as any
 
         marker.addEventListener('click', (e: any) => handleMarkerClick(e))
@@ -413,6 +422,10 @@ function Map() {
         if (!fileUploadRef.current) return
 
         fileUploadRef.current.click()
+    }
+
+    function handleOpenStatistics(): void {
+        navigate('/statistics')
     }
 
     async function handleFileChange(): Promise<void> {
@@ -498,6 +511,9 @@ function Map() {
                     onChange={handleFileChange}
                 />
                 <FontAwesomeIcon icon={faUpload} />
+            </button>
+            <button onClick={handleOpenStatistics} className="float statistics">
+                <FontAwesomeIcon icon={faChartLine} />
             </button>
         </div>
     )

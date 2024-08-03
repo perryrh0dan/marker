@@ -19,7 +19,10 @@ export function saveLayers(data: any): void {
     localStorage.setItem('layers', JSON.stringify(data))
 }
 
-export function loadLayers(): any | null {
+export function loadLayers(): {
+    type: 'FeatureCollection'
+    features: any
+} | null {
     const rawData = localStorage.getItem('layers')
 
     try {

@@ -18,6 +18,9 @@ function Polygon() {
 
     useEffect(() => {
         const layers = loadLayers()
+
+        if (!layers) return
+
         const polygon = layers.features.find(
             (m: any) => m.properties.featureId === params.id,
         )
@@ -44,7 +47,6 @@ function Polygon() {
                 internalCounter += 1
             }
         })
-
         setMarkerCount(internalCounter)
 
         const size = calculatePolygonArea(
@@ -54,8 +56,17 @@ function Polygon() {
                 },
             ),
         )
-
         setSize(Math.round(size * 100) / 100)
+
+        const data = loadData()
+        if (!data) return
+
+        const dataPoint = data.find(
+            (d) => d.id === polygon.properties.featureId,
+        )
+
+        setName(dataPoint?.name ?? '')
+        setComment(dataPoint?.comment ?? '')
     }, [params.id])
 
     const cancel = () => {
@@ -74,6 +85,7 @@ function Polygon() {
         }
 
         saveData(data)
+        cancel()
     }
 
     const handleCancel = () => {
