@@ -110,7 +110,7 @@ function Statistics() {
     }, [polygons, selectedPolygonIds])
 
     return (
-        <div className="main">
+        <div className="statistics">
             <h2>Polygons</h2>
             <ul className="polygons">
                 {polygons.map((p) => (
