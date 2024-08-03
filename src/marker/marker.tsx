@@ -5,7 +5,7 @@ import './marker.css'
 
 import { loadData, saveData } from '../utils'
 
-const BMH = [
+export const BMH = [
     {
         name: 'Kleine Bruthöhle',
         gruppe: 'Spechthöhlen',

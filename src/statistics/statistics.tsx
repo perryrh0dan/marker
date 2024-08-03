@@ -6,7 +6,12 @@ import { Point, loadData, loadLayers, pointInPolygon } from '../utils'
 
 function Statistics() {
     const [polygons, setPolygons] = useState<
-        Array<{ id: string; name: string; markers: number }>
+        Array<{
+            id: string
+            name: string
+            markers: number
+            bmhs: Map<string, number>
+        }>
     >([])
     const [selectedPolygonIds, setSelectedPolygonIds] = useState<Array<string>>(
         [],
@@ -34,15 +39,28 @@ function Statistics() {
                 },
             )
 
+            const bmhs = new Map<string, number>()
             let internalCounter = 0
-            markers.forEach((element: any) => {
+            markers.forEach((marker: any) => {
+                const id = marker.properties.featureId
+                const dataPoint = data.find((d) => d.id === id)
+
                 const point = new Point(
-                    element.geometry.coordinates[0],
-                    element.geometry.coordinates[1],
+                    marker.geometry.coordinates[0],
+                    marker.geometry.coordinates[1],
                 )
 
                 if (pointInPolygon(point, area)) {
                     internalCounter += 1
+
+                    dataPoint?.bmh?.map((v: string) => {
+                        const value = bmhs.get(v)
+                        if (value) {
+                            bmhs.set(v, value + 1)
+                        } else {
+                            bmhs.set(v, 1)
+                        }
+                    })
                 }
             })
 
@@ -50,18 +68,22 @@ function Statistics() {
                 id: id,
                 name: d?.name ?? 'Unnamed',
                 markers: internalCounter,
+                bmhs: bmhs ?? [],
             }
         })
 
         setPolygons(preparedPolygons)
+        setSelectedPolygonIds(preparedPolygons.map((p: { id: string }) => p.id))
     }, [])
 
     function handleCheckbox(id: string): void {
-        if (selectedPolygonIds.includes(id)) {
-            setSelectedPolygonIds(selectedPolygonIds.filter((p) => p !== id))
-        } else {
-            setSelectedPolygonIds([...selectedPolygonIds, id])
-        }
+        setSelectedPolygonIds((prev) => {
+            if (prev.includes(id)) {
+                return prev.filter((p) => p !== id)
+            } else {
+                return [...prev, id]
+            }
+        })
     }
 
     const totalMarkers = useMemo(() => {
@@ -70,10 +92,27 @@ function Statistics() {
             .reduce((acc, val) => acc + val.markers, 0)
     }, [polygons, selectedPolygonIds])
 
+    const totalBMHs = useMemo(() => {
+        return polygons
+            .filter((p) => selectedPolygonIds.includes(p.id))
+            .reduce((acc, val) => {
+                val.bmhs.forEach((value, key) => {
+                    const currentValue = acc.get(key)
+                    if (currentValue) {
+                        acc.set(key, currentValue + value)
+                    } else {
+                        acc.set(key, value)
+                    }
+                })
+
+                return acc
+            }, new Map<string, number>())
+    }, [polygons, selectedPolygonIds])
+
     return (
         <div className="main">
-            <span>Total Markers: {totalMarkers}</span>
-            <ul>
+            <h2>Polygons</h2>
+            <ul className="polygons">
                 {polygons.map((p) => (
                     <li key={p.id} onClick={() => handleCheckbox(p.id)}>
                         <input
@@ -83,6 +122,19 @@ function Statistics() {
                         <span>{p.name}</span>
                     </li>
                 ))}
+            </ul>
+            <h2>General</h2>
+            <span>Total Markers: {totalMarkers}</span>
+            <h2>Statistics</h2>
+            <ul>
+                {Array.from(totalBMHs)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, value]) => (
+                        <li key={key}>
+                            <span>{key}:</span>
+                            <span>{value}</span>
+                        </li>
+                    ))}
             </ul>
         </div>
     )
