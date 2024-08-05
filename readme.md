@@ -1,6 +1,6 @@
 # Marker
 
-Software to find, classify and mark tree microhabitats for [Förderprogramm klimaangepasstes Waldmanagement](https://www.bmel.de/DE/themen/wald/klimaangepasstes-waldmanagement.html)
+Web application to find, classify and mark tree microhabitats for the [Förderprogramm klimaangepasstes Waldmanagement](https://www.bmel.de/DE/themen/wald/klimaangepasstes-waldmanagement.html) by using the geolocation api.
 
 ## Description
 
