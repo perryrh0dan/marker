@@ -116,6 +116,7 @@ function Statistics() {
                 {polygons.map((p) => (
                     <li key={p.id} onClick={() => handleCheckbox(p.id)}>
                         <input
+                            defaultChecked={true}
                             checked={selectedPolygonIds.includes(p.id)}
                             type="checkbox"
                         />
