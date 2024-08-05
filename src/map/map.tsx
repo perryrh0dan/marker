@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapContainer } from 'react-leaflet/MapContainer';
 import { TileLayer } from 'react-leaflet/TileLayer';
 import { FeatureGroup } from 'react-leaflet';
@@ -393,14 +393,6 @@ function Map() {
     fileUploadRef.current.click();
   }
 
-  function handleOpenStatistics(): void {
-    navigate('/statistics');
-  }
-
-  function handleOpenInfo(): void {
-    navigate('/info');
-  }
-
   async function handleFileChange(): Promise<void> {
     if (!fileUploadRef.current) return;
     if (!fileUploadRef.current.files) return;
@@ -461,25 +453,29 @@ function Map() {
         <FeatureGroup ref={liveRef} />
         <TileLayer maxZoom={22} maxNativeZoom={19} url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       </MapContainer>
-      <button onClick={handleAddMarker} className="float marker">
+      <button onClick={handleAddMarker} className="float marker" title="Set marker">
         <FontAwesomeIcon icon={faLocationDot} />
       </button>
-      <button onClick={handleJumpToCurrentLocation} className="float current">
+      <button onClick={handleJumpToCurrentLocation} className="float current" title="Jump to current position">
         <FontAwesomeIcon icon={faLocationCrosshairs} />
       </button>
-      <button onClick={handleExport} className="float export">
+      <button onClick={handleExport} className="float export" title="Export data">
         <FontAwesomeIcon icon={faDownload} />
       </button>
-      <button onClick={handleImport} className="float import">
+      <button onClick={handleImport} className="float import" title="Import data">
         <input id="file" ref={fileUploadRef} type="file" onChange={handleFileChange} />
         <FontAwesomeIcon icon={faUpload} />
       </button>
-      <button onClick={handleOpenStatistics} className="float statistics">
-        <FontAwesomeIcon icon={faChartLine} />
-      </button>
-      <button onClick={handleOpenInfo} className="float info">
-        <FontAwesomeIcon icon={faInfo} />
-      </button>
+      <Link to="/statistics">
+        <button className="float statistics">
+          <FontAwesomeIcon icon={faChartLine} />
+        </button>
+      </Link>
+      <Link to="/info">
+        <button className="float info">
+          <FontAwesomeIcon icon={faInfo} />
+        </button>
+      </Link>
     </div>
   );
 }
