@@ -1,0 +1,24 @@
+.info {
+  padding: 0.25rem;
+  display: flex;
+  gap: 1rem;
+  flex-flow: column;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      align-items: center;
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: 1fr 70px;
+
+      img {
+        width: 70px;
+        height: 70px;
+      }
+    }
+  }
+}
