@@ -370,6 +370,7 @@ function Map() {
     const data = loadData();
 
     const result = {
+      version: 3,
       features: features,
       data: data,
     };
