@@ -431,6 +431,7 @@ function Map() {
         zoom={19}
         maxZoom={22}
         scrollWheelZoom={true}
+        attributionControl={false}
       >
         <FeatureGroup ref={fgRefCallback}>
           <EditControl
