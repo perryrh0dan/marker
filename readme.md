@@ -1,12 +1,16 @@
 # Marker
 
-Web application to find, classify and mark tree microhabitats for the [Förderprogramm klimaangepasstes Waldmanagement](https://www.bmel.de/DE/themen/wald/klimaangepasstes-waldmanagement.html) by using the geolocation api.
+Web application to find, classify and mark tree-related microhabitats for the [Förderprogramm klimaangepasstes Waldmanagement](https://www.bmel.de/DE/themen/wald/klimaangepasstes-waldmanagement.html) by using the geolocation api.
 
 ## Description
 
+|                                     |                             |                           |                                     |                                         |
+| ----------------------------------- | --------------------------- | ------------------------- | ----------------------------------- | --------------------------------------- |
+| ![classify](./assets/classify.jpeg) | ![info](./assets/info.jpeg) | ![map](./assets/map.jpeg) | ![position](./assets/position.jpeg) | ![statistics](./assets/statistics.jpeg) |
+
 ## Usage
 
-The application can be used under the following domain https://marker.tpoe.dev or self hosted with docker.
+The application can be used under the following domain https://marker.tpoe.dev or self-hosted with Docker. The application stores all information locally on your device, so no data is sent to the server. The data can be easily exported and imported in the main view.
 
 ## Resources:
 
