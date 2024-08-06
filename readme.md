@@ -4,13 +4,13 @@ Web application to find, classify and mark tree-related microhabitats for the [F
 
 ## Description
 
-|                                     |                             |                           |                                     |                                         |
+| Classify                            | Info                        | Map                       | Current position                    | Statistics                              |
 | ----------------------------------- | --------------------------- | ------------------------- | ----------------------------------- | --------------------------------------- |
 | ![classify](./assets/classify.jpeg) | ![info](./assets/info.jpeg) | ![map](./assets/map.jpeg) | ![position](./assets/position.jpeg) | ![statistics](./assets/statistics.jpeg) |
 
 ## Usage
 
-The application can be used under the following domain https://marker.tpoe.dev or self-hosted with Docker. The application stores all information locally on your device, so no data is sent to the server. The data can be easily exported and imported in the main view.
+The application can be accessed at https://marker.tpoe.dev or self-hosted with docker. All information is stored locally on your device, ensuring no data is sent to the server. Data can be easily exported and imported from the map view.
 
 ## Resources:
 
