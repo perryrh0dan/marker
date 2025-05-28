@@ -24,7 +24,7 @@ function Statistics() {
 
     const markers = layers?.features.filter((m: any) => m.geometry.type === 'Point');
 
-    const preparedPolygons = polygonLayer.map((layer: any) => {
+    const preparedPolygons = polygonLayer?.map((layer: any) => {
       const id = layer.properties.featureId;
       const d = data.find((d) => d.id === id);
 
@@ -34,7 +34,7 @@ function Statistics() {
 
       const bmhs = new Map<number, number>();
       let internalCounter = 0;
-      markers.forEach((marker: any) => {
+      markers?.forEach((marker: any) => {
         const id = marker.properties.featureId;
         const dataPoint = data.find((d) => d.id === id);
 
@@ -97,6 +97,45 @@ function Statistics() {
       }, new Map<number, number>());
   }, [polygons, selectedPolygonIds]);
 
+  const exportCSV = (): void => {
+    const layers = loadLayers();
+    const data = loadData();
+
+    const lang = navigator.language;
+
+    // Use comma for English-based locales, semicolon for others
+    const separator = lang.startsWith('en') ? ',' : ';';
+
+    const csv: Array<string> = layers?.features
+      .filter((f: any) => f.geometry.type === 'Point')
+      .map((f: any, i: number) => {
+        const details = data.find((d) => d.id === f.properties.featureId);
+
+        const bmhSeparator = separator === ',' ? ';' : ',';
+        const bmhs = BMH.filter((b) => details?.bmh?.includes(b.id))
+          .map((b) => b.name.replace(',', ''))
+          .join(bmhSeparator);
+
+        const coordinates = f.geometry.coordinates;
+        const comment = details?.comment ?? '';
+
+        return `${++i}${separator}${bmhs}${separator}${coordinates[0]}${separator}${coordinates[1]}${separator}${comment}`;
+      });
+
+    csv.splice(0, 0, `Number${separator}Type${separator}Lat${separator}Lon${separator}Comment`);
+
+    const bom = '\uFEFF';
+
+    const url = window.URL.createObjectURL(new Blob([bom + csv.join('\n')], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `items.csv`);
+
+    document.body.appendChild(link);
+
+    link.click();
+  };
+
   return (
     <div className="statistics">
       <h2>Polygons</h2>
@@ -121,6 +160,8 @@ function Statistics() {
             </li>
           ))}
       </ul>
+      <h2>More</h2>
+      <button onClick={exportCSV}>Export CSV</button>
     </div>
   );
 }
