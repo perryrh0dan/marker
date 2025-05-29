@@ -37,6 +37,12 @@ const markerIcon = new Icon({
   iconAnchor: [13, 40],
 });
 
+const warnMarkerIcon = new Icon({
+  iconUrl: '/marker-icon-warn.png',
+  iconSize: [26, 40],
+  iconAnchor: [13, 40],
+});
+
 const liveIcon = new Icon({
   iconUrl: '/live.png',
   iconSize: [16, 16],
@@ -190,17 +196,21 @@ function Map() {
 
   const clusterRefCallback = (ref: FeatureGroupLeaflet) => {
     if (ref !== null) {
-      // clear old layers of feature group
+      // Clear old layers of feature group
       ref.eachLayer((layer) => {
         ref.removeLayer(layer);
       });
 
-      const data = loadLayers();
-      if (!data) return;
+      const layers = loadLayers();
+      const data = loadData();
+      if (!layers) return;
 
-      const leafletGeoJSON = new GeoJSON(data, {
-        pointToLayer: function (_, latlng) {
-          return new Marker(latlng, { icon: markerIcon });
+      const leafletGeoJSON = new GeoJSON(layers, {
+        pointToLayer: function (feature, latlng) {
+          const d = data.find((d) => d.id === feature.properties.featureId);
+          const hasBmh = d && Array.isArray(d.bmh) && d.bmh.length > 0;
+
+          return new Marker(latlng, { icon: hasBmh ? markerIcon : warnMarkerIcon });
         },
       });
 
@@ -209,7 +219,7 @@ function Map() {
           if (zoom > 18) {
             return 10;
           } else if (zoom > 15) {
-            return 80;
+            return 60;
           } else {
             return 100;
           }

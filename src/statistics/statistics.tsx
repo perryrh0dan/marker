@@ -97,6 +97,23 @@ function Statistics() {
       }, new Map<number, number>());
   }, [polygons, selectedPolygonIds]);
 
+  const markersWithMissingData: Array<{ feature: any; details: any | undefined }> = useMemo(() => {
+    const layers = loadLayers();
+    const data = loadData();
+
+    return layers?.features
+      .filter((f: any) => f.geometry.type === 'Point')
+      .map((f: any) => {
+        const details = data.find((d) => d.id === f.properties.featureId);
+
+        return { feature: f, details };
+      })
+      .filter((e: any) => {
+        const hasBmh = e.details && Array.isArray(e.details.bmh) && e.details.bmh.length > 0;
+        return !hasBmh;
+      });
+  }, []);
+
   const exportCSV = (): void => {
     const layers = loadLayers();
     const data = loadData();
@@ -142,7 +159,7 @@ function Statistics() {
       <ul className="polygons">
         {polygons.map((p) => (
           <li key={p.id} onClick={() => handleCheckbox(p.id)}>
-            <input defaultChecked={true} checked={selectedPolygonIds.includes(p.id)} type="checkbox" />
+            <input readOnly={false} checked={selectedPolygonIds.includes(p.id)} type="checkbox" />
             <span>{p.name}</span>
           </li>
         ))}
@@ -162,6 +179,21 @@ function Statistics() {
       </ul>
       <h2>More</h2>
       <button onClick={exportCSV}>Export CSV</button>
+      <h2>Incomplete data</h2>
+      <div className="corrupted">
+        <div className="title">Id</div>
+        <div className="title">Lat</div>
+        <div className="title">Lon</div>
+        <div className="title">Comment</div>
+        {markersWithMissingData.map((m) => (
+          <>
+            <a href={`/marker/${m.feature.properties.featureId}`}>{m.feature.properties.featureId}</a>
+            <div>{m.feature.geometry.coordinates[1]}</div>
+            <div>{m.feature.geometry.coordinates[0]}</div>
+            <div>{m.details?.comment ?? '-'}</div>
+          </>
+        ))}
+      </div>
     </div>
   );
 }
