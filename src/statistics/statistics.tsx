@@ -136,7 +136,7 @@ function Statistics() {
         const coordinates = f.geometry.coordinates;
         const comment = details?.comment ?? '';
 
-        return `${++i}${separator}${bmhs}${separator}${coordinates[0]}${separator}${coordinates[1]}${separator}${comment}`;
+        return `${++i}${separator}${bmhs}${separator}${coordinates[1]}${separator}${coordinates[0]}${separator}${comment}`;
       });
 
     csv.splice(0, 0, `Number${separator}Type${separator}Lat${separator}Lon${separator}Comment`);

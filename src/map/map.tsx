@@ -114,10 +114,15 @@ function Map() {
   }, []);
 
   function copyMarkerToEditableLayer(): void {
+    const data = loadData();
+
     clusterRef.current?.getLayers().map((layer) => {
       if (layer instanceof Marker) {
+        const d = data.find((d) => d.id === (layer as any).featureId);
+        const hasBmh = d && Array.isArray(d.bmh) && d.bmh.length > 0;
+
         const latLng = layer.getLatLng();
-        const newMarker = new Marker(latLng, { icon: markerIcon });
+        const newMarker = new Marker(latLng, { icon: hasBmh ? markerIcon : warnMarkerIcon });
         (newMarker as any).featureId = (layer as any).featureId;
         fgRef.current?.addLayer(newMarker);
 
@@ -127,10 +132,15 @@ function Map() {
   }
 
   function copyMarkerFromEditablelayer(): void {
+    const data = loadData();
+
     fgRef.current?.getLayers().map((layer) => {
       if (layer instanceof Marker) {
+        const d = data.find((d) => d.id === (layer as any).featureId);
+        const hasBmh = d && Array.isArray(d.bmh) && d.bmh.length > 0;
+
         const latLng = layer.getLatLng();
-        const newMarker = new Marker(latLng, { icon: markerIcon });
+        const newMarker = new Marker(latLng, { icon: hasBmh ? markerIcon : warnMarkerIcon });
         newMarker.addEventListener('click', (e: any) => handleMarkerClick(e));
         (newMarker as any).featureId = (layer as any).featureId;
         clusterRef.current?.addLayer(newMarker);
@@ -353,7 +363,7 @@ function Map() {
 
     if (!position) return;
 
-    const marker = new Marker([position.coords.latitude, position.coords.longitude], { icon: markerIcon }) as any;
+    const marker = new Marker([position.coords.latitude, position.coords.longitude], { icon: warnMarkerIcon }) as any;
 
     marker.addEventListener('click', (e: any) => handleMarkerClick(e));
 
