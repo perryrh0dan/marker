@@ -134,7 +134,7 @@ function Statistics() {
           .join(bmhSeparator);
 
         const coordinates = f.geometry.coordinates;
-        const comment = details?.comment ?? '';
+        const comment = details?.comment.replace(',', '') ?? '';
 
         return `${++i}${separator}${bmhs}${separator}${coordinates[1]}${separator}${coordinates[0]}${separator}${comment}`;
       });
